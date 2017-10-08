@@ -1,0 +1,6 @@
+[package]
+name = "reciptmanagement"
+version = "0.1.0"
+authors = ["doenis <d.st@this.com>"]
+
+[dependencies]
