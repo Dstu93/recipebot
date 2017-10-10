@@ -1,0 +1,83 @@
+@startuml
+
+class Recipe{
+    - id : u32
+    - name : String
+    - description : String
+    - ingredients : Vec<Ingredient>
+    --
+    + id() : u32
+    + name() : String
+    + description() : String
+    + ingredients() : Vec<Ingredient>
+}
+
+class Ingredient{
+    - name : String
+    - unit : Unit
+    - quantity : f32
+    --
+    + name() : String
+    + unit() : Unit
+    + quantity() : f32
+}
+
+enum Unit{
+    + GRAMM
+    + KILOGRAMM
+    + MILLILITER
+    + LITER
+    + QUANTITS
+    + TEA_SPOON
+    + SPOON
+}
+
+class ServiceFactory{
+    - recipe_service : RecipeDBService
+    - csv_exporter : CSVExporter
+    - grocery_service : GroceryListService
+    --
+    + recipe_service() : RecipeDBService
+    + csv_exporter() : CSVExporter
+    + grocery_service() : GroceryListService
+}
+
+interface RecipeDBService {
+    + reciptes() : Vec<Recipe>
+    + add(recipe : Recipe)
+    + delete(recipe : Recipe)
+}
+
+interface CSVExporter{
+    + export(ingredients : Vec<Ingredient>, filename : String)
+}
+
+interface GroceryListService{
+    + collect_ingredients(recipes : Vec<Recipe>) : Vec<Ingredient>
+}
+
+class Telegrambot{
+
+}
+
+package GUI{
+
+}
+
+Recipe --* Ingredient
+Ingredient --o Unit
+
+RecipeDBService --> Recipe
+CSVExporter --> Recipe
+CSVExporter --> Ingredient
+GroceryListService --> Recipe
+GroceryListService --> Ingredient
+
+ServiceFactory --o RecipeDBService
+ServiceFactory --o CSVExporter
+ServiceFactory --o GroceryListService
+
+Telegrambot --o ServiceFactory
+GUI --> ServiceFactory
+
+@enduml
