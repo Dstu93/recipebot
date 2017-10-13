@@ -8,7 +8,7 @@ impl ServiceFactory{
     
     /// builds an RecipeDBService
     pub fn recipe_service() -> Option<Box<RecipeDBService>>{
-        let service :FakeRecipeDBServiceImpl = try!(FakeRecipeDBServiceImpl::new());
+        let service :FakeRecipeDBServiceImpl = FakeRecipeDBServiceImpl::new().unwrap();
         Some(Box::new(service))
     }
 
