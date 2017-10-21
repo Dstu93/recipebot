@@ -1,23 +1,29 @@
 
 use recipe_manager::traits::RecipeFmt;
+use recipe_manager::utils::new_line;
 
 ///Object to represent a recipe
 #[derive(Debug,Clone,PartialEq)]
 pub struct Recipe{
-    id : u32,
-    name : String,
-    descr : String,
-    ingredients : Vec<Ingredient>,
+    id: u32,
+    name: String,
+    descr: String,
+    persons: i8,
+    path: String,
+    ingredients: Vec<Ingredient>,
 }
 
 #[allow(dead_code)]
 impl Recipe{
-    /// Creates a new Recipe. Ingredients must add after creation.
-    pub fn new(id : u32, name : String, descr : String) -> Recipe{
+    
+    ///Creates a new Recipe. Ingredients must add after creation.
+    pub fn new(id: u32, name: String, descr: String, persons: i8) -> Recipe{
         Recipe{
             id : id,
+            persons: persons, 
             name : name,
             descr : descr,
+            path: String::from(""),
             ingredients : Vec::new(),
         }
     }
@@ -46,6 +52,18 @@ impl Recipe{
     pub fn add(&mut self, ingredient : Ingredient){
         &self.ingredients.push(ingredient);
     }
+
+    /// Number of persons for which this recipe is intended
+    pub fn persons(&self) -> i8{
+        self.persons
+    }
+
+    /// Path of the recipes. Its meant as a virtual Directory Path
+    /// to order recipes in categorys. 
+    pub fn path(&self) -> String{
+        self.path.clone()
+    }
+
 }
 
 impl RecipeFmt for Recipe{
@@ -124,7 +142,6 @@ pub enum Unit{
 
 impl RecipeFmt for Unit{
 
-    /// Gibt das Einheitskuerzel zurueck.
     fn display(&self) -> String{
         match self{
             &Unit::Gramm => {String::from(" g")},
@@ -139,6 +156,42 @@ impl RecipeFmt for Unit{
 
 }
 
-fn new_line(s : &mut String){
-    s.push_str("\n");
+/* 
+#[derive(Debug,Clone, Hash, Eq, PartialEq)]
+pub struct Node<T>{
+    name: String,
+    id: u32,
+    values: Vec<T>,
+    childs: Vec<Node<T>>,
 }
+
+impl<T> Node<T>{
+
+    /// creates a new Node, the id must be unique.
+    /// if the id is not unique, it can cause collisions in a Tree
+    pub fn new(node_id: u32, name: String) -> Node<T>{
+        Node{
+            name: name,
+            id: node_id,
+            values: Vec::new(),
+            childs: Vec::new(),
+        }
+    }
+
+
+}
+
+impl<T> RecipeFmt for Node<T>{
+    fn display(&self) -> String{
+        unimplemented!("No formatting implemented for Node")
+    }
+}
+
+// Tree for nodes
+
+pub struct Tree<T>{
+    root_node: Node<T>,
+    id_cache: HashMap<u32,Node<T>>,
+    name_id_cache: HashMap<String,u32>,
+} 
+*/
