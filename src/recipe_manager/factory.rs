@@ -1,15 +1,13 @@
 
-use recipe_manager::services::{RecipeDBService, CSVExporter, GroceryListService};
-use recipe_manager::implementations::FakeRecipeDBServiceImpl;
+use recipe_manager::services::{RecipeDAO, CSVExporter, GroceryListService};
 
 ///ServiceFactory. Object to manage Services
 pub struct ServiceFactory{}
 impl ServiceFactory{
     
     /// builds an RecipeDBService
-    pub fn recipe_service() -> Option<Box<RecipeDBService>>{
-        let service :FakeRecipeDBServiceImpl = FakeRecipeDBServiceImpl::new().unwrap();
-        Some(Box::new(service))
+    pub fn recipe_service() -> Option<Box<RecipeDAO>>{
+        Option::None
     }
 
     pub fn csv_exporter(&self) -> Option<Box<CSVExporter>>{
