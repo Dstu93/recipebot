@@ -5,10 +5,10 @@ use recipe_manager::utils::new_line;
 ///Object to represent a recipe
 #[derive(Debug,Clone,PartialEq)]
 pub struct Recipe{
-    id: u32,
+    id: i32,
     name: String,
     descr: String,
-    persons: i8,
+    persons: i16,
     path: String,
     ingredients: Vec<Ingredient>,
 }
@@ -17,19 +17,24 @@ pub struct Recipe{
 impl Recipe{
     
     ///Creates a new Recipe. Ingredients must add after creation.
-    pub fn new(id: u32, name: String, descr: String, persons: i8) -> Recipe{
+    pub fn new(id: i32, name: String, descr: String, persons: i16) -> Recipe{
+        Recipe::with_ingredients(id,name,descr,persons,Vec::new())
+    }
+
+    /// Creates a new recipe with a given vector of ingredients
+    pub fn with_ingredients(id: i32, name: String, descr: String, persons: i16, ingr: Vec<Ingredient>) -> Recipe{
         Recipe{
             id : id,
             persons: persons, 
             name : name,
             descr : descr,
-            path: String::from(""),
-            ingredients : Vec::new(),
+            path: String::from("/"),
+            ingredients : ingr,
         }
     }
 
     /// Returns the Id of the Recipe
-    pub fn id(&self) -> u32{
+    pub fn id(&self) -> i32{
         self.id
     }
 
@@ -54,7 +59,7 @@ impl Recipe{
     }
 
     /// Number of persons for which this recipe is intended
-    pub fn persons(&self) -> i8{
+    pub fn persons(&self) -> i16{
         self.persons
     }
 
@@ -84,7 +89,7 @@ impl RecipeFmt for Recipe{
 //---------------------------------------------------------------------------
 
 /// represents an Ingredient of a Recipe
-#[derive(Debug,Clone,PartialEq)]
+#[derive(Debug,Clone,PartialEq,Serialize, Deserialize)]
 pub struct Ingredient{
     name : String,
     unit : Unit,
@@ -128,7 +133,7 @@ impl RecipeFmt for Ingredient{
 //---------------------------------------------------------------------------
 
 /// Enum of Unit Types of Ingredients
-#[derive(Debug,Clone, Copy, Hash, Eq, PartialEq)]
+#[derive(Debug,Clone, Copy, Hash, Eq, PartialEq, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub enum Unit{
     Gramm,

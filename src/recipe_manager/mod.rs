@@ -7,3 +7,4 @@ pub mod services;
 pub mod factory;
 pub mod traits;
 pub mod utils;
+pub mod config;
