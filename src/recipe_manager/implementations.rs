@@ -1,78 +1,137 @@
 
+extern crate postgres;
+
+use self::postgres::Connection;
+use self::postgres::TlsMode;
+use self::postgres::params::{Builder, Host};
+
 use std::io::Error;
 
 use recipe_manager::services::*;
 use recipe_manager::objects::Recipe;
 use recipe_manager::objects::Ingredient;
-use recipe_manager::objects::Unit;
+use recipe_manager::config::DatabaseConfig;
 
-#[derive(Debug)]
-pub struct FakeRecipeDBServiceImpl{
-    recipes : Vec<Recipe>,
+use serde_json;
+
+/// RecipeDAO Implementation. Use a PostgreSQL Database
+pub struct RecipeDAOImpl{
+    config: DatabaseConfig,
 }
 
-impl FakeRecipeDBServiceImpl{
-    ///Creates Fake Service
-    pub fn new() -> Result<FakeRecipeDBServiceImpl, Error>{
-        let mut service = FakeRecipeDBServiceImpl{
-            recipes : Vec::new(),
-        };
+impl RecipeDAOImpl{
 
-        let mut schockokuchen = Recipe::new(1,String::from("Schockokuchen"), 
-                String::from("Alles in eine Schüssel und schütteln"), 5);
-        let mut kaesekuchen = Recipe::new(2,String::from("Käsekuchen"), 
-                String::from("Alles in eine Schüssel und schütteln"),5);
-        let mut erdbeerkuchen = Recipe::new(3,String::from("Erdbeerkuchen"), 
-                String::from("Alles in eine Schüssel und schütteln"),5);
-        
-        schockokuchen.add(Ingredient::new(String::from("Schokolade"),Unit::Kilogramm, 5.0));
-        schockokuchen.add(Ingredient::new(String::from("Butter"),Unit::Kilogramm, 5.0));
-        schockokuchen.add(Ingredient::new(String::from("Eier"),Unit::Quantity, 5.0));
-        schockokuchen.add(Ingredient::new(String::from("Salz"),Unit::TeaSpoon, 3.5));
-
-        kaesekuchen.add(Ingredient::new(String::from("Käse"),Unit::Kilogramm, 5.0));
-        kaesekuchen.add(Ingredient::new(String::from("Butter"),Unit::Kilogramm, 5.0));
-        kaesekuchen.add(Ingredient::new(String::from("Eier"),Unit::Quantity, 5.0));
-        kaesekuchen.add(Ingredient::new(String::from("Salz"),Unit::TeaSpoon, 6.5));
-
-        erdbeerkuchen.add(Ingredient::new(String::from("Erdbeeren"),Unit::Kilogramm, 5.0));
-        erdbeerkuchen.add(Ingredient::new(String::from("Butter"),Unit::Kilogramm, 5.0));
-        erdbeerkuchen.add(Ingredient::new(String::from("Eier"),Unit::Quantity, 5.0));
-        erdbeerkuchen.add(Ingredient::new(String::from("Salz"),Unit::TeaSpoon, 3.5));
-
-        
-        service.add(schockokuchen).unwrap();
-        service.add(kaesekuchen).unwrap();
-        service.add(erdbeerkuchen).unwrap();
-        Ok(service)
-    }
-
-}
-
-impl RecipeDAO for FakeRecipeDBServiceImpl{
-    fn reciptes(&mut self) -> Result<Vec<Recipe>, Error>{
-        Ok(self.recipes.clone())
-    }
-
-    fn add(&mut self,recipe : Recipe) -> Result<(), Error>{
-        self.recipes.push(recipe);
-        Ok(())
-    }
-    fn delete(&mut self,recipe : Recipe) -> Result<(), Error>{
-        Ok(())
-    }
-
-    fn find_by_name(&mut self, name: String) -> Result<Option<Recipe>, Error>{
-        let recipes_clone = &self.recipes.clone();
-        for recipe in recipes_clone {
-            if recipe.name().eq(&name) {    
-                return Ok(Some(recipe.to_owned()));
-            }
+    pub fn new(config: &DatabaseConfig) -> RecipeDAOImpl{
+        RecipeDAOImpl{
+            config: config.clone(),
         }
-        Ok(None)
     }
 
-    fn find_by_id(&mut self, id: u32) -> Result<Option<Recipe>, Error>{
-        Ok(None)
+    fn connect(&self) -> Result<Connection, Error>{
+        let mut builder = Builder::new();
+        builder.port(self.config.port());
+        builder.user(&self.config.user(),Some(&self.config.password().unwrap()));
+        builder.database(&self.config.database());
+        let params = builder.build(Host::Tcp(self.config.host()));
+
+        let conn = Connection::connect(params, TlsMode::None)?;
+        Ok(conn)
+    }
+
+    fn parse_from_json(json: String) -> Result<Vec<Ingredient>, Error>{
+        let ingredients: Vec<Ingredient> = serde_json::from_str(&json)?;
+        Ok(ingredients)
+    }
+
+    fn parse_to_json(ingredients: Vec<Ingredient>) -> Result<String,Error>{
+        let json = serde_json::to_string(&ingredients)?;
+        Ok(json)
+    }
+    
+}
+
+impl RecipeDAO for RecipeDAOImpl{
+     
+    fn reciptes(&mut self) -> Result<Vec<Recipe>, Error>{
+        //connect to our database
+        let conn = self.connect()?;
+        let mut recipes: Vec<Recipe> = Vec::new();
+
+        //query all recipes and map them on our Recipe struct
+        for row in &conn.query("SELECT id, recipe, description, persons ,ingredients FROM recipes", &[])? {
+            
+            let id = row.get(0);
+            println!("id: {}", id);
+            let name = row.get(1);
+            println!("name: {}", name);
+            let description = row.get(2);
+            println!("descr: {}", description);
+            let persons = row.get(3);
+            println!("persons: {}", persons);
+            
+            //ingredients parsen
+            let ingredient_json: String = row.get(4);
+            let ingredients = RecipeDAOImpl::parse_from_json(ingredient_json)?;
+
+            let recipe = Recipe::with_ingredients(id, name, description, persons,ingredients);
+            recipes.push(recipe);
+        }
+        //After all we finish the connection and close it. 
+        conn.finish()?;
+
+        //if successfull return a vec of all our recipes
+        Ok(recipes)
+    }
+
+    fn add(&mut self,recipe: &Recipe) -> Result<(), Error>{
+            //Connect to the Database
+            let conn = self.connect()?;
+            let ingredient_json = RecipeDAOImpl::parse_to_json(recipe.ingredients())?;
+            // Insert the Recipe in the Database
+            conn.execute("INSERT INTO recipes (recipe,description, persons, path, ingredients) 
+                    VALUES ($1,$2,$3,$4,$5)",
+                &[&recipe.name(), &recipe.descr(),&recipe.persons(), &recipe.path(), &ingredient_json])?;
+            conn.finish()?;
+            Ok(())
+        }
+
+    fn delete(&mut self,recipe: &Recipe) -> Result<(), Error>{
+        let conn = self.connect()?;
+        let id = recipe.id();
+        //TODO log out the number of affected rows.
+        conn.execute("DELETE FROM recipes WHERE id = $1", &[&id])?;
+        Ok(())
+    }
+
+    fn find_by_name(&mut self, name: &String) -> Result<Vec<Recipe>, Error>{
+        let conn = self.connect()?;
+        let mut recipes = Vec::new();
+        for row in &conn.query("SElECT id, recipe, description, persons ,ingredients FROM recipes WHERE recipe = $1", &[&name])?{
+            let id: i32 = row.get(0);
+            let name: String = row.get(1);
+            let descr: String = row.get(2);
+            let persons: i16 = row.get(3);
+            let ingr: String = row.get(4);
+            let ingredients = RecipeDAOImpl::parse_from_json(ingr)?;
+
+            recipes.push(Recipe::with_ingredients(id,name,descr,persons,ingredients));
+        }
+        Ok(recipes)
+    }
+    
+    fn find_by_id(&mut self, id: &u32) -> Result<Recipe, Error>{
+        let conn = self.connect()?;
+        let mut recipes = Vec::new();
+        for row in &conn.query("SElECT id, recipe, description, persons ,ingredients FROM recipes WHERE id = $1", &[&id])?{
+            let id: i32 = row.get(0);
+            let name: String = row.get(1);
+            let descr: String = row.get(2);
+            let persons: i16 = row.get(3);
+            let ingr: String = row.get(4);
+            let ingredients = RecipeDAOImpl::parse_from_json(ingr)?;
+
+            recipes.push(Recipe::with_ingredients(id,name,descr,persons,ingredients));
+        }
+        Ok(recipes[0].clone())
     }
 }
