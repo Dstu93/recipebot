@@ -10,7 +10,7 @@ use std::io::Error;
 use recipe_manager::services::*;
 use recipe_manager::objects::Recipe;
 use recipe_manager::objects::Ingredient;
-use recipe_manager::config::DatabaseConfig;
+use recipe_manager::configuration::config::DatabaseConfig;
 
 use serde_json;
 

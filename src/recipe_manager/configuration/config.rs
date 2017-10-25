@@ -1,4 +1,4 @@
-#[derive(Debug,Clone,Hash, Eq, PartialEq)]
+#[derive(Debug,Clone,Hash, Eq, PartialEq, Serialize, Deserialize)]
 /// Configuration for a Database connection
 pub struct DatabaseConfig{
     port: u16,
