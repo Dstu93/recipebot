@@ -3,7 +3,7 @@ use recipe_manager::traits::RecipeFmt;
 use recipe_manager::utils::new_line;
 
 ///Object to represent a recipe
-#[derive(Debug,Clone,PartialEq)]
+#[derive(Debug,Clone,PartialEq,Serialize,Deserialize)]
 pub struct Recipe{
     id: i32,
     name: String,
