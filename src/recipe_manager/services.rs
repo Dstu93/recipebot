@@ -1,5 +1,6 @@
 
 use recipe_manager::objects::{Recipe, Ingredient};
+use recipe_manager::configuration::config::WebServiceConfig;
 
 use std::io::Error;
 
@@ -7,6 +8,8 @@ use std::io::Error;
 pub trait GroceryListService{
     /// Collects all Ingredients of all given Recipes and merge them to one Grocery_list
     fn grocery_list(&self, recipes: Vec<Recipe>) -> Vec<Ingredient>;
+    /// Exports the Ingredient List as CSV
+    fn export_to_csv(&mut self, ingredients: &Vec<Ingredient>, filename: &String) -> Result<(), Error>;
 }
 
 ///Object for Database Access to store and access Recipes
@@ -23,6 +26,11 @@ pub trait RecipeDAO {
     fn delete(&mut self,recipe: &Recipe) -> Result<(), Error>;
 }
 
-pub trait CSVExporter{
-    fn export(&mut self, ingredients: &Vec<Ingredient>, filename: &String) -> Result<(), Error>;
+/// Service for importing Recipes into the Database
+pub trait RecipeWebService {
+
+    /// Starts the RecipeWebService. The RecipeWebService is an API 
+    /// for other clients and use Http/Https 
+    fn start(&self, config: WebServiceConfig) -> Result<(),Error>;
+
 }
