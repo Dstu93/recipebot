@@ -1,5 +1,7 @@
+#![feature(plugin)]
+#![plugin(rocket_codegen)]
 
-
+extern crate rocket;
 extern crate serde;
 extern crate serde_json;
 
