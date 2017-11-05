@@ -9,7 +9,7 @@ use std::fs::File;
 use std::path::Path;
 
     /// loads the base Configuration of this Application
-pub fn database_config() -> Result<ApplicationConfig, Error>{
+pub fn applicationconfig() -> Result<ApplicationConfig, Error>{
         
     let mut json = String::new();
     let config_path = Path::new("config.json");
