@@ -2,33 +2,46 @@
 #[derive(Debug,Clone,Hash, Eq, PartialEq, Serialize, Deserialize)]
 /// Main Configuration struct.
 pub struct ApplicationConfig{
-    api_key: String,
-    telegrambot: bool,
-    webservice: bool,
+    running_mode: RunningMode,
+    telegram_api_key: String,
+    telegrambot_active: bool,
+    webservice_active: bool,
     webservice_config: WebServiceConfig,
     database_config: DatabaseConfig,
 }
 
 impl ApplicationConfig {
     
-    pub fn new(api_key: String, telegrambot: bool, webservice: bool,webservice_config: WebServiceConfig,database_config: DatabaseConfig) -> ApplicationConfig{
+    pub fn new(mode: RunningMode,api_key: String, telegrambot: bool, webservice: bool,webservice_config: WebServiceConfig,
+        database_config: DatabaseConfig) -> ApplicationConfig{
+
         ApplicationConfig{
-            telegrambot: telegrambot,
-            webservice: webservice,
-            api_key: api_key,
+            running_mode: mode,
+            telegrambot_active: telegrambot,
+            webservice_active: webservice,
+            telegram_api_key: api_key,
             webservice_config: webservice_config,
             database_config: database_config,
         }
     }
 
+    pub fn mode(&self) -> &RunningMode{
+        &self.running_mode
+    }
+
     /// returns the telegram bot api key
     pub fn api_key(&self) -> String{
-        self.api_key.clone()
+        self.telegram_api_key.clone()
     }
 
     /// returns the DatabaseConfig for the database connection settings
-    pub fn database_config(&self) -> DatabaseConfig{
-        self.database_config.clone()
+    pub fn database_config(&self) -> &DatabaseConfig{
+        &self.database_config
+    }
+
+    /// returns the webservice Config
+    pub fn webservice_config(&self) -> &WebServiceConfig{
+        &self.webservice_config
     }
 }
 
@@ -37,30 +50,53 @@ impl ApplicationConfig {
 /// Config for the WebService.
 pub struct WebServiceConfig{
     tls: bool,
+    cert: String,
+    priv_key: String,
     address: String,
     port: u16,
+    workers: u16,
 }
 
 impl WebServiceConfig{
     
-    pub fn new(tls: bool, address: String, port: u16) -> WebServiceConfig{
+    pub fn new(tls: bool,cert: String, private_key: String, address: String, port: u16, workers: u16) -> WebServiceConfig{
         WebServiceConfig{
             tls: tls,
+            cert: cert,
+            priv_key: private_key,
             address: address,
             port: port,
+            workers: workers,
         }
     }
-
+    
     pub fn use_tls(&self) -> bool{
         self.tls
     }
 
-    pub fn address(&self) -> String{
-        self.address.clone()
+    /// returns the path of the certificate
+    pub fn certificate(&self) -> &String{
+        &self.cert
     }
 
+    /// the private key
+    pub fn private_key(&self) -> &String{
+        &self.priv_key
+    }
+
+    /// The address which should listen on
+    pub fn address(&self) -> &String{
+        &self.address
+    }
+
+    /// Port Number
     pub fn port(&self) -> u16 {
         self.port
+    }
+
+    /// The number of Worker Threads
+    pub fn workers(&self) -> u16{
+        self.workers
     }
 }
 
@@ -112,4 +148,12 @@ impl DatabaseConfig{
     pub fn database(&self) -> String{
         self.database.clone()
     }
+}
+
+/// Enum of all possible modes in which the program can run. 
+/// For example, in development or production mode
+#[derive(Debug,Clone,Hash,PartialEq,Eq,Serialize,Deserialize)]
+pub enum RunningMode {
+    Development,
+    Production,
 }
