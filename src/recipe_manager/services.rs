@@ -1,8 +1,8 @@
 
 use recipe_manager::objects::{Recipe, Ingredient};
-use recipe_manager::configuration::config::WebServiceConfig;
 
 use std::io::Error;
+use std::thread::JoinHandle;
 
 ///Service for Collect Ingredients to make a GroceryList
 pub trait GroceryListService{
@@ -31,6 +31,8 @@ pub trait RecipeWebService {
 
     /// Starts the RecipeWebService. The RecipeWebService is an API 
     /// for other clients and use Http/Https 
-    fn start(&self, config: WebServiceConfig) -> Result<(),Error>;
+    fn start(&self) -> Result<JoinHandle<()>,Error>;
 
+    /// Stops and close the Web API
+    fn stop(&self) -> Result<(),Error>;
 }

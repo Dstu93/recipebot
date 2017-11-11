@@ -9,7 +9,7 @@ use std::fs::File;
 use std::path::Path;
 
     /// loads the base Configuration of this Application
-pub fn database_config() -> Result<ApplicationConfig, Error>{
+pub fn applicationconfig() -> Result<ApplicationConfig, Error>{
         
     let mut json = String::new();
     let config_path = Path::new("config.json");
@@ -27,8 +27,8 @@ pub fn database_config() -> Result<ApplicationConfig, Error>{
 
 pub fn create_default_config() -> Result<(),Error>{
     let db_config = DatabaseConfig::new(5432,"localhost".into(),"username".into(),None,"databaseName".into());
-    let web_config = WebServiceConfig::new(true,"address".into(),8080);
-    let config = ApplicationConfig::new("Telegram_Api_key".into(),true,true,web_config,db_config);
+    let web_config = WebServiceConfig::new(true,"certificationPath".into(),"privateKey".into(),"address".into(),8080,12);
+    let config = ApplicationConfig::new(RunningMode::Development,"Telegram_Api_key".into(),true,true,web_config,db_config);
     let json = serde_json::to_string(&config)?;
     
     let config_path = Path::new("config.json");
