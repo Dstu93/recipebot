@@ -3,6 +3,9 @@ extern crate postgres;
 extern crate argon2rs;
 extern crate rand;
 
+use std::collections::HashMap;
+use std::time::{Duration,SystemTime};
+
 use self::postgres::params::{Host,Builder};
 use self::postgres::{TlsMode,Connection};
 use self::rand::os::OsRng;
@@ -113,6 +116,147 @@ impl UserService for UserServiceImpl {
     }
 }
 
-//TODO implement AuthenticationService mit login cache 
-//inkl. einem Thread der den Cache im gewissen Abstand 
-//prüft und leert
+pub struct AuthenticationServiceImpl {
+    cache: HashMap<String,Login>,
+    user_service: Box<UserService + 'static>,
+    cache_size: u32,
+}
+
+impl AuthenticationServiceImpl {
+
+    /// creates new AuthenticationService with a HashMap as cache.
+    /// the userservice is needed for validation and the cachesize 
+    /// is the limit of logins.
+    pub fn new(user_service: Box<UserService + 'static>, cache_size: u32) -> AuthenticationServiceImpl {
+        // set the cache size to default 30 logins
+        AuthenticationServiceImpl{
+            cache: HashMap::with_capacity(30),
+            user_service: user_service,
+            cache_size: cache_size,
+        }
+    }
+
+    /// removes all tickets from the cache that have not been used for longer than the limit.
+    fn remove_tickets(map: &mut HashMap<String, Login>, limit: Duration) {
+        let mut to_remove = Vec::new();
+        for (key, login) in &*map {
+            if login.last_used() > limit.as_secs() {
+                to_remove.push(key.to_owned());
+            }
+        }
+        for key in to_remove.iter() {
+            map.remove(key);
+        }
+    }
+}
+
+impl AuthenticationService for AuthenticationServiceImpl {
+
+    fn validate_ticket(&self, ticket: &String) -> bool{
+        self.cache.contains_key(ticket)
+    }
+
+    fn refresh_ticket(&mut self, ticket: &String) -> bool{
+        if self.cache.contains_key(ticket) {
+            let login = self.cache.get_mut(ticket).unwrap();
+            login.used();
+            true
+        } else {false}
+    }
+
+    fn login(&mut self, username: &String, password: &String) -> Result<Option<String>,Error>{
+
+        if self.cache.len() >= self.cache_size as usize {
+            // return an error to handle the cache overflow?
+            println!("The Login-Cache is full, cant authenticate user [{}]", username);
+            return Ok(None);
+        }
+
+        let authenticated = self.user_service.authenticate(username,password)?;
+        if authenticated {
+            let mut rnd = OsRng::new()?;
+            let ticket: String = rnd.gen_ascii_chars().take(32).collect();
+            let user = self.user_service.by_name(username)?.unwrap();
+            let login = Login::new(user);
+            self.cache.insert(ticket.clone(),login);
+            Ok(Some(ticket))
+        }
+        else{
+            Ok(None)
+        }
+    }
+
+    fn logout(&mut self, ticket: &String) -> bool{
+
+        //remove token from the cache
+        let value = self.cache.remove(ticket);
+        match value {
+            Some(login) => {println!("Removed user {:?} from login cache",login.user()); true},
+            None => {println!("the ticket isnt cached and is userles");false},
+        }
+    }
+
+    fn get_user_from_token(&self, ticket: &String) -> Option<&User>{
+        let result = self.cache.get(ticket);
+        let user = match result {
+            Some(login) => Some(login.user()),
+            None => None,
+        };
+        user
+    }
+
+    fn clear_cache(&mut self){
+        self.cache.clear();
+    }
+
+    fn rm_logins(&mut self,limit: Duration){
+       AuthenticationServiceImpl::remove_tickets(&mut self.cache, limit);
+    }
+}
+
+#[derive(Debug)]
+struct Login {
+    user: User,
+    since: SystemTime,
+    last_used: SystemTime,
+}
+
+impl Login {
+    
+    /// creates a new Login for the given user
+    pub fn new(user: User) -> Login{
+        Login{
+            user: user,
+            since: SystemTime::now(),
+            last_used: SystemTime::now(),
+        }
+    }
+
+    /// returns the duration between the past and the current systemtime as seconds.
+    /// in case of an error it returns the max 2^64 
+    fn between_now(earlier: SystemTime) -> u64{
+        let between = earlier.duration_since(SystemTime::now());
+        let seconds = match between {
+            Ok(duration) => {duration.as_secs()},
+            Err(_) => {2^64},
+        };
+        seconds
+    }
+
+    /// returns the user for this login
+    pub fn user(&self) -> &User{
+        &self.user
+    }
+
+    /// returns the Duration between the current time and the 
+    /// time of the last used of this login.
+    pub fn last_used(&self) ->  u64{
+        Login::between_now(self.last_used)
+    }
+
+    /// refresh the last used field to the current systemtime
+    pub fn used(&mut self){
+        self.last_used = SystemTime::now();
+    }
+
+}
