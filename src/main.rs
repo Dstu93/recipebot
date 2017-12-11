@@ -13,6 +13,8 @@ extern crate serde_derive;
 mod recipe_manager;
 mod web_api;
 
+mod tests;
+
 fn main() {
     println!("Hello, world!");
 }
