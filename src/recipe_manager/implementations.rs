@@ -52,7 +52,7 @@ impl RecipeDAOImpl{
 
 impl RecipeDAO for RecipeDAOImpl{
      
-    fn reciptes(&mut self) -> Result<Vec<Recipe>, Error>{
+    fn reciptes(&self) -> Result<Vec<Recipe>, Error>{
         //connect to our database
         let conn = self.connect()?;
         let mut recipes: Vec<Recipe> = Vec::new();
@@ -93,7 +93,19 @@ impl RecipeDAO for RecipeDAOImpl{
                 &[&recipe.name(), &recipe.descr(),&recipe.persons(), &recipe.path(), &ingredient_json])?;
             conn.finish()?;
             Ok(())
-        }
+    }
+
+    fn add_all(&mut self, recipes: &Vec<Recipe>) -> Result<(),Error>{
+        Ok(())
+    }
+
+    fn update(&mut self, recipe: &Recipe) -> Result<(),Error>{
+        Ok(())
+    }
+
+    fn update_all(&mut self, recipes: &Vec<Recipe>) -> Result<(),Error>{
+        Ok(())
+    }
 
     fn delete(&mut self,recipe: &Recipe) -> Result<(), Error>{
         let conn = self.connect()?;
@@ -103,7 +115,7 @@ impl RecipeDAO for RecipeDAOImpl{
         Ok(())
     }
 
-    fn find_by_name(&mut self, name: &String) -> Result<Vec<Recipe>, Error>{
+    fn find_by_name(&self, name: &String) -> Result<Vec<Recipe>, Error>{
         let conn = self.connect()?;
         let mut recipes = Vec::new();
         for row in &conn.query("SElECT id, recipe, description, persons ,ingredients FROM recipes WHERE recipe = $1", &[&name])?{
@@ -119,7 +131,7 @@ impl RecipeDAO for RecipeDAOImpl{
         Ok(recipes)
     }
     
-    fn find_by_id(&mut self, id: &u32) -> Result<Recipe, Error>{
+    fn find_by_id(&self, id: &u32) -> Result<Recipe, Error>{
         let conn = self.connect()?;
         let mut recipes = Vec::new();
         for row in &conn.query("SElECT id, recipe, description, persons ,ingredients FROM recipes WHERE id = $1", &[&id])?{

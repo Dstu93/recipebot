@@ -6,18 +6,26 @@ use std::thread;
 use std::thread::JoinHandle;
 
 use rocket::Route;
+use rocket::Rocket;
 use rocket::Config;
 use rocket::config::{LoggingLevel};
 use rocket::State;
 use rocket_contrib::json::Json;
 
 use std::io::Error;
+use std::sync::Mutex;
+use std::sync::RwLock;
+
+use web_api::services::{AuthenticationService,UserService};
+use web_api::implementations::{UserServiceImpl,AuthenticationServiceImpl};
 
 use recipe_manager::configuration::config::*;
-use recipe_manager::services::RecipeWebService;
+use recipe_manager::services::{RecipeWebService,RecipeDAO};
 use recipe_manager::factory::ServiceFactory;
 use recipe_manager::objects::*;
 
+
+use web_api::webscripts;
 /// Struct to host the Web API. 
 /// The API is build on the Rocket-Framework.
 pub struct RecipeWebServiceImpl{
@@ -33,11 +41,6 @@ impl RecipeWebServiceImpl {
             config: config,
             rocket_config: rocket_config,
         }
-    }
-
-    /// Creates a Vec of all Routes. 
-    fn webscripts(&self) -> Vec<Route>{
-        routes![recipes,login,add,update]
     }
 
     /// Translate the ApplicationConfig to the Configuration Struct
@@ -69,8 +72,15 @@ impl RecipeWebService for RecipeWebServiceImpl {
     fn start(&self) -> Result<JoinHandle<()>,Error>{
 
         let conf = self.rocket_config.clone();
-        let webscripts = self.webscripts();
-        let factory = ServiceFactory::new(self.config.clone());
+        //we need to create our needed DAOs and Services
+        let recipe_dao = ServiceFactory::recipe_service(&self.config.database_config())?;
+        let userservice = Box::new(UserServiceImpl::new(&self.config.database_config()));
+        let auth_service = Box::new(AuthenticationServiceImpl::new(userservice,30));
+
+        //now we build the rocket instance, TODO
+
+
+        //we need a factory here to create the needed things
 
         // Spawn a new Thread for our rocket webserver
         // we need the rocketConfig, our web functions/routes 
@@ -78,7 +88,7 @@ impl RecipeWebService for RecipeWebServiceImpl {
         // by the rocket Framework, so that we can use the Factory 
         // in our route functions.
         let handle = thread::spawn(||{
-            rocket::custom(conf, true).manage(factory).mount("/", webscripts).launch(); 
+            //rocket::custom(conf, true).manage(recipe_dao).mount("/", webscripts).launch(); 
         });
         
         Ok(handle)
@@ -96,26 +106,13 @@ impl RecipeWebService for RecipeWebServiceImpl {
 
 }
 
-// Web API Functions
-
-// returns all Recipes in the Database as JSON
-#[get("/recipes")]
-fn recipes(state: State<ServiceFactory>) -> Result<Json<Vec<Recipe>>,Error>{
-    let recipes: Vec<Recipe> = state.recipe_service()?.reciptes()?;
-    Ok(Json(recipes))
-}
-
-#[get("/login")]
-fn login() -> String{
-    unimplemented!("currently under development");
-}
-
-#[post("/add", data = "<token>")]
-fn add(state: State<ServiceFactory>, token: String) -> Result<String,Error>{
-    Ok(String::from("currently not implemented"))
-}
-
-#[post("/update", data = "<token>")]
-fn update(token: String) -> Result<String,Error>{
-    unimplemented!("currently not supported");
-}
+pub fn rocket(recipe_dao: Box<RecipeDAO + Send + Sync>, auth_service: Box<AuthenticationService + Send>, rocket_config: Config) -> Rocket {
+        let authentication_service = Mutex::new(auth_service);
+        let recipeservice = RwLock::new(recipe_dao);
+        let rocket = rocket::custom(rocket_config, true)
+            .manage(recipeservice)
+            .manage(authentication_service)
+            .mount("/", webscripts::build());
+        
+        rocket
+    }
