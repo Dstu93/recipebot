@@ -118,7 +118,7 @@ impl UserService for UserServiceImpl {
 
 pub struct AuthenticationServiceImpl {
     cache: HashMap<String,Login>,
-    user_service: Box<UserService + 'static>,
+    user_service: Box<UserService + Send + Sync>,
     cache_size: u32,
 }
 
@@ -127,7 +127,7 @@ impl AuthenticationServiceImpl {
     /// creates new AuthenticationService with a HashMap as cache.
     /// the userservice is needed for validation and the cachesize 
     /// is the limit of logins.
-    pub fn new(user_service: Box<UserService + 'static>, cache_size: u32) -> AuthenticationServiceImpl {
+    pub fn new(user_service: Box<UserService + Send + Sync>, cache_size: u32) -> AuthenticationServiceImpl {
         // set the cache size to default 30 logins
         AuthenticationServiceImpl{
             cache: HashMap::with_capacity(30),

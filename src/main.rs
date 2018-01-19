@@ -1,5 +1,6 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
+#![feature(decl_macro)]
 
 extern crate rocket;
 extern crate rocket_contrib;
@@ -16,5 +17,5 @@ mod web_api;
 mod tests;
 
 fn main() {
-    println!("Hello, world!");
+    println!("hello world");
 }
