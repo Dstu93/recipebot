@@ -96,14 +96,42 @@ impl RecipeDAO for RecipeDAOImpl{
     }
 
     fn add_all(&mut self, recipes: &Vec<Recipe>) -> Result<(),Error>{
+        //Connect to the Database
+        let conn = self.connect()?;
+        let stm = conn.prepare("INSERT INTO recipes (recipe,description, persons, path, ingredients)
+                    VALUES ($1,$2,$3,$4,$5)")?;
+        for recipe in recipes {
+            let ingredient_json = RecipeDAOImpl::parse_to_json(recipe.ingredients())?;
+            stm.execute(&[&recipe.name(), &recipe.descr(),&recipe.persons(), &recipe.path(), &ingredient_json])?;
+        }
         Ok(())
     }
 
     fn update(&mut self, recipe: &Recipe) -> Result<(),Error>{
+        let conn = self.connect()?;
+        let ingredient_json = RecipeDAOImpl::parse_to_json(recipe.ingredients())?;
+        conn.execute("UPDATE recipes SET recipe = $1, \
+                                                    description = $2, \
+                                                    persons = $3,
+                                                    path = $4,
+                                                    ingredients = $5
+                                                    WHERE id = $6",
+                               &[&recipe.name(), &recipe.descr(),&recipe.persons(), &recipe.path(), &ingredient_json, &recipe.id()])?;
         Ok(())
     }
 
     fn update_all(&mut self, recipes: &Vec<Recipe>) -> Result<(),Error>{
+        let conn = self.connect()?;
+        let stm = conn.prepare("UPDATE recipes SET recipe = $1, \
+                                                    description = $2, \
+                                                    persons = $3,
+                                                    path = $4,
+                                                    ingredients = $5
+                                                    WHERE id = $6")?;
+        for recipe in recipes {
+            let ingredient_json = RecipeDAOImpl::parse_to_json(recipe.ingredients())?;
+            stm.execute(&[&recipe.name(), &recipe.descr(),&recipe.persons(), &recipe.path(), &ingredient_json, &recipe.id()])?;
+        }
         Ok(())
     }
 
