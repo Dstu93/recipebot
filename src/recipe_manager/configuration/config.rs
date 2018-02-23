@@ -108,16 +108,18 @@ pub struct DatabaseConfig{
     user: String,
     password: Option<String>,
     database: String,
+    tls: bool,
 }
 
 impl DatabaseConfig{
-    pub fn new(port: u16, host: String, user: String, password: Option<String>, database: String) -> DatabaseConfig{
+    pub fn new(port: u16, host: String, user: String, password: Option<String>, database: String, use_tls: bool) -> DatabaseConfig{
         DatabaseConfig{
             port: port,
             host: host,
             user: user,
             password: password,
             database: database,
+            tls:  use_tls,
         }
     }
 
@@ -147,6 +149,10 @@ impl DatabaseConfig{
 
     pub fn database(&self) -> String{
         self.database.clone()
+    }
+
+    pub fn tls(&self) -> bool{
+        self.tls
     }
 }
 
