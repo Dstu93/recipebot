@@ -26,7 +26,7 @@ pub fn applicationconfig() -> Result<ApplicationConfig, Error>{
 }
 
 pub fn create_default_config() -> Result<(),Error>{
-    let db_config = DatabaseConfig::new(5432,"localhost".into(),"username".into(),None,"databaseName".into());
+    let db_config = DatabaseConfig::new(5432,"localhost".into(),"username".into(),None,"databaseName".into(),true);
     let web_config = WebServiceConfig::new(true,"certificationPath".into(),"privateKey".into(),"address".into(),8080,12);
     let config = ApplicationConfig::new(RunningMode::Development,"Telegram_Api_key".into(),true,true,web_config,db_config);
     let json = serde_json::to_string(&config)?;
