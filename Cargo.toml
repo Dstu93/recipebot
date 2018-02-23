@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["doenis <d.st@this.com>"]
 
 [dependencies]
-postgres = "0.15.1"
+postgres = {version = "0.15",  features = ["with-native-tls"]}
 serde_json = "1.0.4"
 serde = "1.0.16"
 serde_derive = "1.0.16"
