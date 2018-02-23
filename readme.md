@@ -9,6 +9,6 @@ finished|in progress|planned|feature
 [ ] | [x] | [ ] | Telegram Bot API
 [ ] | [ ] | [x] | Recipe Cake spring form calculation
 [ ] | [ ] | [x] | add "filetree" for recipes
-[ ] | [ ] | [X] | TLS support for PostgreSQL
+[X] | [ ] | [ ] | TLS support for PostgreSQL
 [ ] | [ ] | [X] | write the documentation
-[ ] | [ ] | [X] | normalize recipe database
+[ ] | [ ] | [X] | normalize database
