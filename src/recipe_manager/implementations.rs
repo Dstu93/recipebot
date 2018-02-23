@@ -3,6 +3,7 @@ extern crate postgres;
 
 use self::postgres::Connection;
 use self::postgres::TlsMode;
+use self::postgres::tls::native_tls::NativeTls;
 use self::postgres::params::{Builder, Host};
 
 use std::io::Error;
@@ -34,8 +35,14 @@ impl RecipeDAOImpl{
         builder.database(&self.config.database());
         let params = builder.build(Host::Tcp(self.config.host()));
 
-        let conn = Connection::connect(params, TlsMode::None)?;
-        Ok(conn)
+        if self.config.tls() {
+            let negotiator = NativeTls::new().expect("Cant use native TLS");
+            let conn = Connection::connect(params, TlsMode::Require(&negotiator))?;
+            Ok(conn)
+        }else{
+            let conn = Connection::connect(params, TlsMode::None)?;
+            Ok(conn)
+        }
     }
 
     fn parse_from_json(json: String) -> Result<Vec<Ingredient>, Error>{
