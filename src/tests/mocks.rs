@@ -52,7 +52,7 @@ impl RecipeDAO for RecipeDAOMock {
     fn find_by_name(&self, name: &String) -> Result<Vec<Recipe>, Error>{
         let mut result = Vec::with_capacity(30);
         for recipe in &self.recipes{
-            if name.eq(&recipe.name()){
+            if recipe.name().contains(name){
                 result.push(recipe.clone())
             }
         }
