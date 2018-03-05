@@ -12,6 +12,7 @@ use teleborg::{Command,Bot};
 use teleborg::objects::Update;
 use recipe_manager::services::RecipeDAO;
 use recipe_manager::objects::*;
+use recipe_bot::commands::command::RecipeCommand;
 use recipe_bot::commands::error::CmdError;
 
 pub struct SearchCmd{
@@ -57,7 +58,7 @@ impl SearchCmd{
 
         let mut answer = String::new();
         for recipe in recipes {
-            let entry = format!("Id: {} Name: {}",recipe.id(),recipe.name());
+            let entry = format!("Id:{} Name: {}",recipe.id(),recipe.name());
             answer.push_str(&*entry);
             answer.push_str("\n")
         }
@@ -88,6 +89,26 @@ impl Command for SearchCmd{
             },
         };
     }
+}
+
+impl RecipeCommand for SearchCmd{
+
+    fn keyword(&self) -> &str{
+        "search"
+    }
+
+    fn description(&self) -> &str{
+        "Sucht ein Rezept anhand des Namens. Es werden alle Rezepte mit gleichen oder ähnlichen Namen angezeigt."
+    }
+
+    fn execute_cmd(&self, args: Option<Vec<&str>>) -> Result<String,CmdError>{
+        self.exec_cmd(args)
+    }
+
+    fn execute_cmd_mut(&mut self, args: Option<Vec<&str>>) -> Result<String,CmdError>{
+        self.execute_cmd(args)
+    }
+
 }
 
 //util methods
