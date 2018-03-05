@@ -29,14 +29,12 @@ fn search_cmd_test(){
     recipes.push("Strawberry Cake");
     let result = cmd.exec_cmd(Some(recipes));
     assert!(result.is_ok());
-    println!("Cmd Answer: {}",result.unwrap());
 
-    //fix mock..., mock does not make a like request
-    //maybe starts with?
     recipes = Vec::new();
     recipes.push("Strawberry");
     recipes.push("Schoc");
     let result = cmd.exec_cmd(Some(recipes));
     assert!(result.is_ok());
-    assert!(result.unwrap().len() > 0);
+    assert_eq!(result.unwrap(),"Id:0 Name: Strawberry Cake\nId:1 Name: Schoclate Cake\n".to_string());
+
 }

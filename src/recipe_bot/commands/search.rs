@@ -22,8 +22,7 @@ impl SearchCmd{
     pub fn new(dao: RwLock<Box<RecipeDAO + Send + Sync>>) -> SearchCmd{
         SearchCmd{dao}
     }
-
-    //FIXME create Error Enum for the commands
+    
     pub fn exec_cmd(&self, args: Option<Vec<&str>>) -> Result<String,CmdError>{
 
         if args.is_none(){
@@ -32,7 +31,7 @@ impl SearchCmd{
 
         let lock_result = self.dao.read();
         if lock_result.is_err(){
-            //TODO log the error.
+            //FIXME log the error.
             return Err(CmdError::UnknownError);
         }
 
@@ -42,12 +41,12 @@ impl SearchCmd{
         }
 
         let guard = lock_result.unwrap();
-        let mut recipes = Vec::new();
+        let mut recipes: Vec<Recipe> = Vec::new();
         for name in names {
             let result = guard.find_by_name(&name.to_string());
             if result.is_ok(){recipes.extend(result.unwrap().into_iter())}
             else {
-                //TODO log Error
+                //FIXME log Error
                 println!("Error: searched for {}, found error: {:#?}",name,result.unwrap_err());
             }
         }
@@ -56,20 +55,38 @@ impl SearchCmd{
             return Err(CmdError::NotFound);
         }
 
-        //TODO create String List from all recipes
-        let list = String::from("TODO");
-        Ok(list)
+        let mut answer = String::new();
+        for recipe in recipes {
+            let entry = format!("Id: {} Name: {}",recipe.id(),recipe.name());
+            answer.push_str(&*entry);
+            answer.push_str("\n")
+        }
+        Ok(answer)
     }
+
+    /// translates the CmdError for this Command
+    pub fn translate_error(e: &CmdError) -> &str{
+        match e {
+            &CmdError::NotFound => "Das Rezept wurde nicht gefunden",
+            &CmdError::NoArguments => "Bitte geben sie die Namen der gesuchten Rezepte ",
+            &CmdError::UnknownError => "Ein unbekannter Fehler ist aufgetreten",
+            &CmdError::DatabaseAccessError => "Fehler beim Datenbank zugriff",
+            &CmdError::InvalidInput => "Ihre eingabe ist ungültig.",
+        }
+    }
+
 }
 
 impl Command for SearchCmd{
     fn execute(&mut self, bot: &Bot, update: Update, args: Option<Vec<&str>>){
         let result = self.exec_cmd(args);
-        if result.is_ok(){
-            reply(bot,&update,&*result.unwrap());
-        } else{
-            //TODO Match Error Enum and reply
-        }
+        match result {
+            Ok(answer) => {reply(bot,&update,&*answer);},
+            Err(e) => {
+                let error_descr = SearchCmd::translate_error(&e);
+                reply(bot,&update,error_descr);
+            },
+        };
     }
 }
 
