@@ -11,13 +11,13 @@ use teleborg::{Bot,Command};
 /// Details command for the recipe-bot.
 /// takes one or more ids of recipes and returns the recipe details as string.
 pub struct DetailsCommand{
-    dao: RwLock<Box<RecipeDAO>>,
+    dao: RwLock<Box<RecipeDAO + Send>>,
 }
 
 impl DetailsCommand{
 
     /// creates a new DetailsCommand-Object
-    pub fn new(dao: RwLock<Box<RecipeDAO>>) -> DetailsCommand{
+    pub fn new(dao: RwLock<Box<RecipeDAO + Send>>) -> DetailsCommand{
         DetailsCommand{dao}
     }
 }
@@ -34,14 +34,23 @@ impl RecipeCommand for DetailsCommand{
 
     fn execute_cmd(&self, args: Option<Vec<&str>>) -> Result<String,CmdError>{
 
-        //TODO parse arguments
+        let ids: Vec<u32> = Vec::new();
 
         let lock = self.dao.read();
         if lock.is_err(){
             return Err(CmdError::DatabaseAccessError);
         }
+        let mut recipes = Vec::with_capacity(ids.len());
+        for id in ids {
+            let res = lock.unwrap().find_by_id(&id);
+            if res.is_ok(){ recipes.push(res.unwrap());}
+            //TODO Error Message when recipe with id was not found
+        }
 
-        let recipes = lock.unwrap().find_by_id()
+        let mut answer = String::new(); //maybe with precalculated capacity?
+        //TODO adding Recipes to answer
+
+        Ok(answer)
     }
 
     fn execute_cmd_mut(&mut self, args: Option<Vec<&str>>) -> Result<String,CmdError>{
