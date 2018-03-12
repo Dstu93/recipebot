@@ -17,9 +17,7 @@ impl RecipeDAOMock {
     pub fn new() -> RecipeDAOMock {
         let mut recipes = Vec::with_capacity(30);
         RecipeDAOMock::fill_with_recipes(&mut recipes);
-        RecipeDAOMock{
-            recipes: recipes,
-        }
+        RecipeDAOMock{recipes}
     }
 
     /// Fills a vec with test recipes

@@ -1,5 +1,6 @@
 
 use std::sync::RwLock;
+use std::str::FromStr;
 
 use recipe_bot::util;
 use recipe_manager::services::RecipeDAO;
@@ -39,10 +40,17 @@ impl RecipeCommand for DetailsCommand{
             return Err(CmdError::NoArguments);
         }
 
-        let mut ids: Vec<u32> = Vec::new();
         let args = args.unwrap();
-        for arg in args {
+        if args.is_empty(){
+            return Err(CmdError::NoArguments);
+        }
 
+        let mut ids: Vec<u32> = Vec::new();
+        for arg in args {
+            let parse_result = u32::from_str(arg);
+            if parse_result.is_err(){
+                return Err(CmdError::InvalidInput);
+            }
         }
 
 
@@ -58,7 +66,7 @@ impl RecipeCommand for DetailsCommand{
             //TODO Error Message when recipe with id was not found
         }
 
-        let mut answer = String::with_capacity(50 * ids.len()); //maybe with precalculated capacity?
+        let mut answer = String::with_capacity(50 * ids.len()); //FIXME calculation of needed size
         //TODO adding Recipes to answer
 
         Ok(answer)

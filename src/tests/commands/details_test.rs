@@ -32,7 +32,7 @@ fn details_command_test(){
     let args = Some(vec!["0"]);
     let result = cmd.execute_cmd(args);
     assert!(result.is_ok());
-    //TODO validate output string.
+    assert_eq!(result.unwrap(),"");
 
     //ids > 1
     let args = Some(vec!["0","1"]);
