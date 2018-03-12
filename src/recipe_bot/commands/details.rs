@@ -4,8 +4,10 @@ use std::str::FromStr;
 
 use recipe_bot::util;
 use recipe_manager::services::RecipeDAO;
+use recipe_manager::traits::RecipeFmt;
 use recipe_bot::commands::error::CmdError;
 use recipe_bot::commands::command::RecipeCommand;
+use recipe_manager::utils::new_line;
 
 use teleborg::{Bot,Command};
 use teleborg::objects::Update;
@@ -45,12 +47,13 @@ impl RecipeCommand for DetailsCommand{
             return Err(CmdError::NoArguments);
         }
 
-        let mut ids: Vec<u32> = Vec::new();
+        let mut ids = Vec::new();
         for arg in args {
             let parse_result = u32::from_str(arg);
             if parse_result.is_err(){
                 return Err(CmdError::InvalidInput);
             }
+            ids.push(parse_result.unwrap());
         }
 
 
@@ -67,7 +70,11 @@ impl RecipeCommand for DetailsCommand{
         }
 
         let mut answer = String::with_capacity(50 * ids.len()); //FIXME calculation of needed size
-        //TODO adding Recipes to answer
+        for recipe in recipes {
+            let recipe_str = recipe.display();
+            answer.push_str(&*recipe_str);
+            new_line(&mut answer);
+        }
 
         Ok(answer)
     }
