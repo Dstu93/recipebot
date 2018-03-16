@@ -131,9 +131,8 @@ impl RecipeDAO for RecipeDAOImpl{
         Ok(recipes)
     }
     
-    fn find_by_id(&self, id: &u32) -> Result<Recipe, Error>{
+    fn find_by_id(&self, id: &u32) -> Result<Option<Recipe>, Error>{
         let conn = self.connect()?;
-        let mut recipes = Vec::new();
         for row in &conn.query("SElECT id, recipe, description, persons ,ingredients FROM recipes WHERE id = $1", &[&id])?{
             let id: i32 = row.get(0);
             let name: String = row.get(1);
@@ -142,8 +141,8 @@ impl RecipeDAO for RecipeDAOImpl{
             let ingr: String = row.get(4);
             let ingredients = RecipeDAOImpl::parse_from_json(ingr)?;
 
-            recipes.push(Recipe::with_ingredients(id,name,descr,persons,ingredients));
+            return Ok(Some(Recipe::with_ingredients(id,name,descr,persons,ingredients)));
         }
-        Ok(recipes[0].clone())
+        Ok(None)
     }
 }
